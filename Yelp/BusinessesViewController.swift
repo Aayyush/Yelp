@@ -8,8 +8,9 @@
 
 import UIKit
 
-class BusinessesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class BusinessesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UIScrollViewDelegate {
     
+    var isMoreLoading = false
     var businesses: [Business]!
     
     @IBOutlet weak var tableView: UITableView!
@@ -24,19 +25,7 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 120
         
-        Business.searchWithTerm(term: "Thai", completion: { (businesses: [Business]?, error: Error?) -> Void in
-            
-            self.businesses = businesses
-            self.tableView.reloadData()
-            if let businesses = businesses {
-                for business in businesses {
-                    print(business.name!)
-                    print(business.address!)
-                }
-            }
-            
-            }
-        )
+        loadData(a: 0)
         
         /* Example of Yelp search with more search options specified
          Business.searchWithTerm("Restaurants", sort: .distance, categories: ["asianfusion", "burgers"], deals: true) { (businesses: [Business]!, error: Error!) -> Void in
@@ -49,6 +38,21 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
          }
          */
         
+    }
+    
+    func loadData(a: integer_t? ){
+        Business.searchWithTerm(term: "Thai", offset: a!, completion: { (businesses: [Business]?, error: Error?) -> Void in
+            self.businesses = businesses
+            self.tableView.reloadData()
+            if let businesses = businesses {
+                for business in businesses {
+                    print(business.name!)
+                    print(business.address!)
+                }
+            }
+            
+        }
+        )
     }
     
     override func didReceiveMemoryWarning() {
@@ -68,6 +72,18 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         let cell = tableView.dequeueReusableCell(withIdentifier: "BusinessCell", for: indexPath) as! BusinessCell
         cell.business = businesses[indexPath.row]
         return cell
+    }
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if (!isMoreLoading){
+            let scrollViewContentHeight = tableView.contentSize.height
+            let scrollOffsetThreshold = scrollViewContentHeight - tableView.bounds.size.height
+            if (scrollView.contentOffset.y > scrollOffsetThreshold && tableView.isDragging){
+                isMoreLoading = true
+                loadData(a: 20)
+            }
+            
+        }
     }
     
     /*
